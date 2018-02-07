@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -21,12 +20,19 @@ namespace CrawlerDemo
         {
             var _url = "http://www.byebyepaper.com.br";
             Console.WriteLine($"URL Pesquisada: { _url }");
-
-            if (!_url.StartsWith("http://") && !_url.StartsWith("https://"))
-                _url = "http://" + _url;
+            Console.WriteLine();
+            Console.WriteLine();
+//            if (!_url.StartsWith("http://") && !_url.StartsWith("https://"))
+//              _url = "http://" + _url;
 
             string responseUrl = string.Empty;
-            string htmlData = ASCIIEncoding.ASCII.GetString(DownloadData(_url, out responseUrl));
+            //            string htmlData = ASCIIEncoding.ASCII.GetString(DownloadData(_url, out responseUrl));
+            WebRequest request = WebRequest.Create(_url.Trim());
+            request.Credentials = CredentialCache.DefaultCredentials;
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            Stream dataStream = response.GetResponseStream();
+            StreamReader reader = new StreamReader(dataStream);
+            string htmlData = reader.ReadToEnd();
 
             if (responseUrl != string.Empty)
                 _url = responseUrl;
@@ -55,33 +61,26 @@ namespace CrawlerDemo
                 Console.WriteLine($"Imagem encontrada: {_item.ToString()}");
             }
 
+            var _resultLinks = ExtractLinksII(htmlData,_url);
+
+            Console.WriteLine($"Encontrou? { _resultLinks.Count } Imagem(ns)");
+            foreach (var _item in _resultLinks)
+            {
+                Console.WriteLine($"Link encontrado: {_item.ToString()}");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine();
+
             var _saveFileWithoutHTMLTags = HtmlRemoval.StripTagsRegexCompiled(htmlData);
 
             Console.WriteLine($@"Arquivo Salvo em: {Environment.CurrentDirectory}\WriteText.txt");
 
-            File.WriteAllText($@"{Environment.CurrentDirectory}\WriteText.txt", _saveFileWithoutHTMLTags);
-            /*
-            var divs =
-            htmlDocument.DocumentNode.Descendants("a").ToList();
-//                .Where(node => node.GetAttributeValue("id", "").Equals("wrapper")).ToList();                       
-            foreach(var div in divs)
-            {
-                //                var _item = div.Descendants("href").FirstOrDefault().ChildAttributes("href").FirstOrDefault().Value;
-                var _item = div.Descendants("href").FirstOrDefault().Attributes.FirstOrDefault().Value;
-
-                Console.WriteLine($"Dados: {_item.ToString()}");
-                //var car = new Car
-                //{
-                     
-                //    Model = div.Descendants("h2").FirstOrDefault().InnerText,
-                //    Price = div.Descendants("div").FirstOrDefault().InnerText,
-                //    Link = div.Descendants("a").FirstOrDefault().ChildAttributes("href").FirstOrDefault().Value,
-                //    ImageUrl = div.Descendants("img").FirstOrDefault().ChildAttributes("src").FirstOrDefault().Value
-                //};
-                
-            }
-            */
-            Console.WriteLine("Fim do Scrap....");
+            File.WriteAllText($@"{Environment.CurrentDirectory}\WriteText.txt", _saveFileWithoutHTMLTags.Trim());
+            //_saveFileWithoutHTMLTags
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine("Fim do Scrapping....");
             Console.WriteLine("Pressione Enter para sair do programa...");
             ConsoleKeyInfo keyinfor = Console.ReadKey(true);
             if(keyinfor.Key == ConsoleKey.Enter)
@@ -138,13 +137,22 @@ namespace CrawlerDemo
             return downloadedData;
         }
 
+        private static string GetBaseURL(string Url)
+        {
+            int inx = Url.IndexOf("://") + "://".Length;
+            int end = Url.IndexOf('/', inx);
+
+            string baseUrl = string.Empty;
+            if (end != -1)
+                return Url.Substring(0, end);
+            else
+                return string.Empty;
+        }
+
         private static List<string> ExtractImages(string Url)
         {
             List<string> imageList = new List<string>();
-
-            //           string responseUrl = string.Empty;
             string htmlData = Url;
-            //ASCIIEncoding.ASCII.GetString(DownloadData(Url, out responseUrl));
 
             if (htmlData != string.Empty)
             {
@@ -181,20 +189,54 @@ namespace CrawlerDemo
                     imageList[i] = img;
                 }
             }
-
             return imageList;
         }
 
-        private static string GetBaseURL(string Url)
+        private static List<string> ExtractLinksII(string Url, string BaseUrl)
         {
-            int inx = Url.IndexOf("://") + "://".Length;
-            int end = Url.IndexOf('/', inx);
+            List<string> linkList = new List<string>();
+            string htmlData = Url;
+            string _baseURL = BaseUrl.Trim();
+            if (!_baseURL.Trim().EndsWith(@"/"))
+                _baseURL = _baseURL + "@/";
+            
+            if (htmlData != string.Empty)
+            {
+                string linkHtmlCode = "<a";
+                string linkHrefCode = @"href=""";
 
-            string baseUrl = string.Empty;
-            if (end != -1)
-                return Url.Substring(0, end);
-            else
-                return string.Empty;
+                int index = htmlData.IndexOf(linkHtmlCode);
+                while (index != -1)
+                {
+                    htmlData = htmlData.Substring(index);
+                    int brackedEnd = htmlData.IndexOf('>');
+                    int start = htmlData.IndexOf(linkHrefCode) + linkHrefCode.Length;
+                    int end = htmlData.IndexOf('"', start + 1);
+                    if (end > start && start < brackedEnd)
+                    {
+                        string loc = htmlData.Substring(start, end - start);
+                        if ((!linkList.Contains(loc.Trim())) && (!linkList.ToString().ToUpper().Contains("FACEBOOK")) && (!linkList.ToString().Trim().Equals(BaseUrl.Trim())))
+                            linkList.Add(loc.Trim());
+                    }
+                    if (linkHtmlCode.Length < htmlData.Length)
+                        index = htmlData.IndexOf(linkHtmlCode, linkHtmlCode.Length);
+                    else
+                        index = -1;
+                }
+                for (int i = 0; i < linkList.Count; i++)
+                {
+                    string img = linkList[i];
+
+                    string baseUrl = GetBaseURL(Url);
+
+                    if ((!img.StartsWith("http://") && !img.StartsWith("https://"))
+                        && baseUrl != string.Empty)
+                        img = baseUrl + "/" + img.TrimStart('/');
+
+                    linkList[i] = img;
+                }
+            }
+            return linkList;
         }
 
         public static List<string> ExtractPhones(string textToScrape)
@@ -238,5 +280,22 @@ namespace CrawlerDemo
 
             return results;
         }
+
+        private static List<string> ExtractLinks(string input, string baseUrl)
+        {
+            var links = new List<string>();
+            Regex regex = new Regex("a href\\s*=\\s*(?:\"(?<1>[^\"]*)\"|(?<1>\\S+))", RegexOptions.IgnoreCase);
+            Match match;
+            for (match = regex.Match(input); match.Success; match = match.NextMatch())
+            {
+                foreach (Group group in match.Groups)
+                {
+                    if (!(group.Value.Contains(baseUrl.Trim())) && (!(links.Contains(match.Value))))
+                        links.Add(group.Value);
+                }
+            }
+            return links;
+        }
+
     }
 }
