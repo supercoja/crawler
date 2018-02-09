@@ -13,8 +13,8 @@ namespace CrawlerDemo
         static void Main(string[] args)
         {
             var _urlCollection = new List<string>();
-//            _urlCollection.Add("http://www.byebyepaper.com.br");
-            _urlCollection.Add("http://atl.clicrbs.com.br/#!/home");
+            _urlCollection.Add("http://www.byebyepaper.com.br");
+//            _urlCollection.Add("http://atl.clicrbs.com.br/#!/home");
 
 
             foreach (string _urlToRead in _urlCollection)
