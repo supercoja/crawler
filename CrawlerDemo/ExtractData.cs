@@ -37,17 +37,27 @@ namespace CrawlerDemo
             for (match = regExpPhoneWithTrace.Match(textToScrape); match.Success; match = match.NextMatch())
             {
                 if (!(results.Contains(match.Value)))
+                {
                     results.Add(match.Value);
+                    break;
+                }
             }
             for (match = regExpPhoneWithoutSpaceAndTrace.Match(textToScrape); match.Success; match = match.NextMatch())
             {
                 if (!(results.Contains(match.Value)))
+                {
                     results.Add(match.Value);
+                    break;
+                }
+
             }
             for (match = regExpPhoneWithPoint.Match(textToScrape); match.Success; match = match.NextMatch())
             {
                 if (!(results.Contains(match.Value)))
+                {
                     results.Add(match.Value);
+                    break;
+                }
             }
 
             return results;
@@ -62,7 +72,10 @@ namespace CrawlerDemo
             for (match = reg.Match(textToScrape); match.Success; match = match.NextMatch())
             {
                 if (!(results.Contains(match.Value)))
+                {
                     results.Add(match.Value);
+                    break;
+                }
             }
 
             return results;
@@ -88,8 +101,11 @@ namespace CrawlerDemo
                     if (end > start && start < brackedEnd)
                     {
                         string loc = htmlData.Substring(start, end - start);
-                        if (loc.isValidImage()) 
-                        imageList.Add(loc);
+                        if (loc.isValidImage())
+                        {
+                            imageList.Add(loc);
+                            break;
+                        }
                     }
                     if (imageHtmlCode.Length < htmlData.Length)
                         index = htmlData.IndexOf(imageHtmlCode, imageHtmlCode.Length);

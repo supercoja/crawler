@@ -3,19 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CrawlerDemo
 {
     class Program
     {
-
         static void Main(string[] args)
         {
             var _urlCollection = new List<string>();
+            var _result = new ResultScrap();
+            var _timeStarted = DateTime.Now;
             _urlCollection.Add("http://www.byebyepaper.com.br");
-//            _urlCollection.Add("http://atl.clicrbs.com.br/#!/home");
-
 
             foreach (string _urlToRead in _urlCollection)
             {
@@ -45,15 +43,37 @@ namespace CrawlerDemo
                 {
                     Console.WriteLine($"Não Foi Possível Salvar o Arquivo: {e.Message}");
                 }
+
                 var _siteContentLink = new StringBuilder();
                 var _resultLinks = ExtractData.ExtractLinks(_fileURL, _urlToRead);
                 foreach (string _linkedLink in _resultLinks)
                 {
-                        Console.WriteLine($"Lendo SubSite: {_linkedLink}");
-                        _siteContentLink.Append(ReadURLToFile(_linkedLink.Trim()));
+                     _siteContentLink.Append(ReadURLToFile(_linkedLink.Trim()));
+                    var _resultPhones = ExtractData.ExtractValidPhones(_siteContentLink.ToString());
+
+                    if (_resultPhones.Count > 0)
+                        _result.SetPhoneNumber(_resultPhones[0]);
+                    var _resultEmails = ExtractData.ExtractEmails(_siteContentLink.ToString());
+                    if (_resultEmails.Count > 0)
+                    {
+                        _result.SetEmail(_resultEmails[0]);
+                    }
+                    var _resultImages = ExtractData.ExtractImages(_siteContentLink.ToString());
+                    if (_resultImages.Count > 0)
+                    {
+                        _result.SetImage(_resultImages[0]);
+                    }
+
+                    if (_result.IsValidResult())
+                    {
+                        break;
+                    }
                 }
-                startCrawlerasync(_siteContentLink.ToString(), _folderURL);
             }
+            var _timeFinished = DateTime.Now;
+            var _timeElapsed = _timeFinished.Subtract(_timeStarted);
+            Console.WriteLine($"Tempo de Execução {_timeElapsed.TotalSeconds} Segundos");
+            Console.WriteLine($"Resultados Encontrados: Telefone: {_result.PhoneNumber} Email: {_result.Email } Imagem: {_result.Image } ");
             Console.WriteLine("Fim do Scrapping....");
             Console.WriteLine("Pressione Enter para sair do programa...");
             ConsoleKeyInfo keyinfor = Console.ReadKey(true);
@@ -88,29 +108,5 @@ namespace CrawlerDemo
             File.WriteAllText($@"{FilePathSave}\{FileName}", ContentToSave);
         }
 
-        private static async Task startCrawlerasync(string FileUrl, string BaseUrl)
-        {
-            var _resultPhones =  ExtractData.ExtractValidPhones(FileUrl);
-            Console.WriteLine($"Telefones Encontrados: {_resultPhones.Count}");
-            foreach (string _item in _resultPhones)
-            {
-                Console.WriteLine(_item);
-
-            }
-            var _resultEmails = ExtractData.ExtractEmails(FileUrl);
-            Console.WriteLine($"Emails Encontrados: {_resultEmails.Count}");
-
-            foreach (string _item in _resultEmails)
-            {
-                Console.WriteLine(_item);
-            }
-            var _resultImages = ExtractData.ExtractImages(FileUrl);
-            Console.WriteLine($"Imagens Encontradas: {_resultImages.Count}");
-
-            foreach (string _item in _resultImages)
-            {
-                Console.WriteLine(_item);
-            }
-        }
     }
 }

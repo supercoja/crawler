@@ -69,6 +69,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ResultScrap.cs" />
+    <Compile Include="URIExtension.cs" />
+    <Compile Include="WebPage.cs" />
     <Compile Include="ExtractData.cs" />
     <Compile Include="HtmlRemoval.cs" />
     <Compile Include="Program.cs" />
