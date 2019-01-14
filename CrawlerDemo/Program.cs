@@ -13,7 +13,9 @@ namespace CrawlerDemo
             var _urlCollection = new List<string>();
             var _result = new ResultScrap();
             var _timeStarted = DateTime.Now;
-            _urlCollection.Add("http://www.byebyepaper.com.br");
+            _urlCollection.Add("https://tecnoblog.net/212622/fim-conta-corrente-digital-gratis/");
+            _urlCollection.Add("https://br.investing.com/");
+            _urlCollection.Add("https://economia.estadao.com.br/noticias/geral,banrisul-e-novo-alvo-do-banco-do-brasil,180755");
 
             foreach (string _urlToRead in _urlCollection)
             {
